@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Facefy - Random Video Call & Chat</title>
+  <meta name="viewport" content="width=400, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f7fbff;
+      color: #222;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    /* Top Bar */
+    .topbar {
+      background: #4fc3f7;
+      color: #fff;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+    }
+    .menu-icon {
+      font-size: 28px;
+      cursor: pointer;
+      user-select: none;
+      margin-right: 8px;
+    }
+    .logo {
+      font-weight: bold;
+      font-size: 22px;
+      letter-spacing: 1px;
+    }
+    /* Side Drawer */
+    .drawer {
+      position: fixed;
+      top: 0; left: -220px;
+      width: 220px;
+      height: 100%;
+      background: #e3f2fd;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+      z-index: 200;
+      transition: left 0.3s;
+      padding-top: 56px;
+    }
+    .drawer.open { left: 0; }
+    .drawer a {
+      display: block;
+      padding: 16px 24px;
+      color: #1976d2;
+      text-decoration: none;
+      font-size: 18px;
+      border-bottom: 1px solid #bbdefb;
+      transition: background 0.2s;
+    }
+    .drawer a:hover { background: #bbdefb; }
+    /* Overlay */
+    .overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.2);
+      z-index: 150;
+      display: none;
+    }
+    .overlay.show { display: block; }
+    /* Main Content */
+    .container {
+      margin-top: 56px;
+      padding: 24px 12px 90px 12px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      min-height: calc(100vh - 56px - 70px);
+    }
+    .ad-space {
+      width: 300px;
+      height: 200px;
+      background: #e1f5fe;
+      border-radius: 12px;
+      margin: 24px auto 32px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #0288d1;
+      font-size: 20px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+    }
+    .centered {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .sky-btn {
+      background: #4fc3f7;
+      color: #fff;
+      border: none;
+      border-radius: 24px;
+      font-size: 20px;
+      padding: 12px 36px;
+      margin: 18px 0;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(33,150,243,0.09);
+      transition: background 0.2s;
+    }
+    .sky-btn:hover { background: #039be5; }
+    .choose-btns {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      margin: 44px 0 0 0;
+    }
+    .action-btns {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      margin: 44px 0 0 0;
+    }
+    .bottom-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #fff;
+      text-align: center;
+      padding: 14px 8px 16px 8px;
+      font-size: 16px;
+      color: #111;
+      font-weight: 500;
+      box-shadow: 0 -2px 10px rgba(33,150,243,0.07);
+      letter-spacing: 0.5px;
+    }
+    .bottom-bar span {
+      color: #000;
+      font-weight: bold;
+    }
+    /* Video Call/Chat UI */
+    #video-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    #localVideo, #remoteVideo {
+      width: 120px;
+      height: 90px;
+      background: #b3e5fc;
+      border-radius: 8px;
+      margin: 6px;
+      object-fit: cover;
+    }
+    #remoteVideo { width: 350px; height: 350px; }
+    .chat-box {
+      width: 100%;
+      max-width: 320px;
+      height: 200px;
+      background: #e1f5fe;
+      border-radius: 10px;
+      margin: 18px auto 0 auto;
+      padding: 12px;
+      overflow-y: auto;
+      font-size: 16px;
+      box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+    }
+    .chat-input-row {
+      display: flex;
+      margin: 10px 0;
+    }
+    .chat-input {
+      flex: 1;
+      border: 1px solid #b3e5fc;
+      border-radius: 20px;
+      padding: 8px 14px;
+      font-size: 16px;
+      outline: none;
+    }
+    .send-btn {
+      background: #4fc3f7;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      margin-left: 8px;
+      padding: 8px 18px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    /* Responsive */
+    @media (max-width: 400px) {
+      .ad-space, .chat-box { width: 98vw; }
+      .container { padding: 14px 2vw 90px 2vw; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="menu-icon" id="menuBtn">&#9776;</span>
+    <span class="logo">Facefy</span>
+  </div>
+  <div class="drawer" id="drawer">
+    <a href="#" onclick="navigate('home'); return false;">Home</a>
+    <a href="#" onclick="navigate('about'); return false;">About Us</a>
+    <a href="#" onclick="navigate('contact'); return false;">Contact Us</a>
+  </div>
+  <div class="overlay" id="overlay"></div>
+  <div class="container" id="mainContent">
+    <!-- Content will be injected here -->
+  </div>
+  <div class="bottom-bar">
+    <span>Welcome to Facefy</span><br>
+    A random video call and chat site. Now talk anywhere and anyone in the world.
+  </div>
+  <!-- Scripts -->
+  <script>
+    // SPA Navigation
+    let currentPage = 'home';
+    function navigate (page) {
+      currentPage = page;
+      closeDrawer();
+      renderPage();
+    }
+    // Drawer logic
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('overlay');
+    document.getElementById('menuBtn').onclick = function() {
+      drawer.classList.add('open');
+      overlay.classList.add('show');
+    };
+    overlay.onclick = closeDrawer;
+    function closeDrawer() {
+      drawer.classList.remove('open');
+      overlay.classList.remove('show');
+    }
+    // Pages
+    function renderPage() {
+      let html = '';
+      if (currentPage === 'home') {
+        html = `
+          <div class="centered">
+            <div class="ad-space">Ad Space</div>
+            <button class="sky-btn" onclick="navigate('start')">Tap to Start</button>
+          </div>
+        `;
+      } else if (currentPage === 'about') {
+        html = `
+          <div style="margin-top:40px;">
+            <h2 style="color:#039be5;">Welcome to Facefy</h2>
+            <p>
+              A new world of entertainment where we are trying to connect all the world in one place by exchanging skills and entertaining each other on live video chat or share your thoughts and feelings with someone else.
+            </p>
+          </div>
+        `;
+      } else if (currentPage === 'contact') {
+        html = `
+          <div style="margin-top:40px;">
+            <h2 style="color:#039be5;">Contact Us</h2>
+            <p>Email: <a href="mailto:contact@facefy.com">contact@facefy.com</a></p>
+          </div>
+        `;
+      } else if (currentPage === 'start') {
+        html = `
+          <div class="centered">
+            <div style="margin: 40px 0 24px 0; font-size: 24px; color:#039be5; font-weight:600;">You are in</div>
+            <div class="choose-btns">
+              <button class="sky-btn" onclick="chooseGender('male')">Male</button>
+              <button class="sky-btn" onclick="chooseGender('female')">Female</button>
+              <button class="sky-btn" onclick="chooseGender('Lesbian')">Others</button>
+              <button class="sky-btn" onclick="chooseGender('Gay')">More</button>
+            </div>
+          </div>
+        `;
+      } else if (currentPage === 'choose') {
+        html = `
+          <div class="centered">
+            <div style="margin: 40px 0 24px 0; font-size: 22px; color:#039be5; font-weight:600;">Choose an option</div>
+            <div class="action-btns">
+              <button class="sky-btn" onclick="startVideoCall()">Video Call</button>
+              <button class="sky-btn" onclick="startChat()">Chat</button>
+            </div>
+          </div>
+        `;
+      } else if (currentPage === 'video') {
+        html = getVideoCallUI();
+      } else if (currentPage === 'chat') {
+        html = getChatUI();
+      }
+      document.getElementById('mainContent').innerHTML = html;
+    }
+    // Gender selection
+    let userGender = '';
+    function chooseGender(gender) {
+      userGender = gender;
+      currentPage = 'choose';
+      renderPage();
+    }
+    // Video Call UI
+    function getVideoCallUI() {
+      return `
+        <div class="centered">
+          <div style="color:#039be5; font-size:20px; margin-bottom:8px;">Video Call</div>
+          <div id="video-container">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <video id="localVideo" autoplay playsinline muted></video>
+          </div>
+          <div style="margin-top:18px;">
+            <button class="sky-btn" onclick="skipUser('video')">Skip</button>
+            <button class="sky-btn" onclick="endSession()">End Call</button>
+          </div>
+        </div>
+      `;
+    }
+    // Chat UI
+    function getChatUI() {
+      return `
+        <div class="centered">
+          <div style="color:#039be5; font-size:20px; margin-bottom:8px;">Chat</div>
+          <div class="chat-box" id="chatBox"></div>
+          <div class="chat-input-row">
+            <input class="chat-input" id="chatInput" placeholder="Type a message..." />
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+          </div>
+          <div style="margin-top:18px;">
+            <button class="sky-btn" onclick="skipUser('chat')">Skip</button>
+            <button class="sky-btn" onclick="endSession()">End Chat</button>
+          </div>
+        </div>
+      `;
+    }
+    // Navigation logic for action buttons
+    function startVideoCall() {
+      currentPage = 'video';
+      renderPage();
+      setupVideoCall();
+    }
+    function startChat() {
+      currentPage = 'chat';
+      renderPage();
+      setupChat();
+    }
+    function skipUser(type) {
+      if (type === 'video') {
+        endSession();
+        setTimeout(() => { startVideoCall(); }, 600);
+      } else {
+        endSession();
+        setTimeout(() => { startChat(); }, 600);
+      }
+    }
+    function endSession() {
+      if (window.peerConnection) {
+        window.peerConnection.close();
+        window.peerConnection = null;
+      }
+      if (window.localStream) {
+        window.localStream.getTracks().forEach(t => t.stop());
+        window.localStream = null;
+      }
+      if (window.socket) {
+        window.socket.emit('leave');
+      }
+      currentPage = 'choose';
+      renderPage();
+    }
+
+    // --- WebRTC & Chat Frontend Logic ---
+    // Signaling server URL (update this to your deployed backend)
+    const SIGNALING_SERVER_URL = 'http://localhost:8080'; // <-- CHANGE THIS
+
+    // Video Call Setup
+    async function setupVideoCall() {
+      // Ask for camera/mic
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('localVideo').srcObject = stream;
+        window.localStream = stream;
+      } catch (err) {
+        alert('Camera/Microphone access denied. Please allow permissions.');
+        endSession();
+        return;
+      }
+      // Connect to signaling server
+      connectSocket('video');
+    }
+
+    // Chat Setup
+    function setupChat() {
+      connectSocket('chat');
+      updateChatBox('System', 'Looking for a partner...');
+      document.getElementById('chatInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+          sendMessage();
+      }
+     });
+         if (e.key === 'Enter') {
+          sendMessage();
+      }
+     }
+    // Socket.io & Signaling
+    function connectSocket(mode) {
+      if (window.socket) {
+        window.socket.disconnect();
+        window.socket = null;
+      }
+      // Load socket.io dynamically if not loaded
+      if (!window.io) {
+        const s = document.createElement('script');
+        s.src = SIGNALING_SERVER_URL + '/socket.io/socket.io.js';
+        s.onload = () => connectSocket(mode);
+        document.body.appendChild(s);
+        return;
+      }
+      window.socket = io(SIGNALING_SERVER_URL, { transports: ['websocket'] });
+      window.socket.on('connect', () => {
+        window.socket.emit('join', { gender: userGender, mode });
+      });
+      window.socket.on('match', async (data) => {
+        if (mode === 'video') {
+          await startWebRTC(data.initiator);
+        } else {
+          updateChatBox('System', 'Partner found! Say hi!');
+        }
+      });
+      window.socket.on('signal', async (data) => {
+        if (window.peerConnection) {
+          if (data.sdp) {
+            await window.peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            if (data.sdp.type === 'offer') {
+              const answer = await window.peerConnection.createAnswer();
+              await window.peerConnection.setLocalDescription(answer);
+              window.socket.emit('signal', { sdp: answer });
+            }
+          }
+          if (data.candidate) {
+            try {
+              await window.peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            } catch (e) { /* ignore */ }
+          }
+        }
+      });
+      window.socket.on('chat', (msg) => {
+        updateChatBox('Stranger', msg);
+      });
+      window.socket.on('leave', () => {
+        updateChatBox('System', 'Partner disconnected.');
+        if (currentPage === 'video') {
+          document.getElementById('remoteVideo').srcObject = null;
+        }
+      });
+    }
+
+    // WebRTC logic
+    async function startWebRTC(initiator) {
+      const config = {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          // Add your TURN server below for production!
+          { urls: 'turn:relay1.expressturn.com:3480',
+          username: '000000002068351871', credential: 'xvPn8tgOzNnCAE8Qy9ov7ylwR5M=' }
+        ]
+      };
+      window.peerConnection = new RTCPeerConnection(config);
+      // Add local stream
+      window.localStream.getTracks().forEach(track => {
+        window.peerConnection.addTrack(track, window.localStream);
+      });
+      // Remote stream
+      window.peerConnection.ontrack = (event) => {
+        document.getElementById('remoteVideo').srcObject = event.streams[0];
+      };
+      // ICE candidates
+      window.peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          window.socket.emit('signal', { candidate: event.candidate });
+        }
+      };
+      // Offer/Answer
+      if (initiator) {
+        const offer = await window.peerConnection.createOffer();
+        await window.peerConnection.setLocalDescription(offer);
+        window.socket.emit('signal', { sdp: offer });
+      }
+    }
+
+    // Chat logic
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      updateChatBox('You', msg);
+      if (window.socket) window.socket.emit('chat', msg);
+      input.value = '';
+    }
+    function updateChatBox(sender, msg) {
+      const box = document.getElementById('chatBox');
+      if (!box) return;
+      const time = new Date().toLocaleTimeString().slice(0,5);
+      box.innerHTML += `<div><b>${sender}:</b> ${msg} <span style="font-size:12px;color:#888;">${time}</span></div>`;
+      box.scrollTop = box.scrollHeight;
+    }
+// Initial render
+    renderPage();
+  </script>
+</body>
+</html>
