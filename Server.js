@@ -8,12 +8,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// HTML ਫਾਈਲ ਨੂੰ ਸਰਵ ਕਰਨ ਲਈ
-app.use(express.static(path.join(__dirname)));
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// HTML ਫਾਈਲ ਨੂੰ ਸਰਵ ਕਰਨ ਲ
 
 // ਉਡੀਕ ਕਰ ਰਹੇ ਉਪਭੋਗਤਾਵਾਂ ਲਈ ਇੱਕ ਸਧਾਰਨ ਕਤਾਰ
 let waitingUsers = [];
