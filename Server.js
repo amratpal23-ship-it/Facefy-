@@ -3,17 +3,16 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
-
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
 // HTML ਫਾਈਲ ਨੂੰ ਸਰਵ ਕਰਨ ਲਈ
-app.use(express.static(path.join(__dirname)));
+/*app.use(express.static(path.join(__dirname)));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+  res.sendFile(path.join(__dirname, 'index.html')); 
+});*/
 
 // ਉਡੀਕ ਕਰ ਰਹੇ ਉਪਭੋਗਤਾਵਾਂ ਲਈ ਇੱਕ ਸਧਾਰਨ ਕਤਾਰ
 let waitingUsers = [];
@@ -82,3 +81,5 @@ const PORT = 8080;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+git add package.json package-lock.json
+
