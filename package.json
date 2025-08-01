@@ -1,0 +1,24 @@
+{
+  "name": "facefy-app",
+  "version": "1.0.0",
+  "description": "Files of Facefy backend",
+  "main": "Server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amratpal23-ship-it/Facefy-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/amratpal23-ship-it/Facefy-/issues"
+  },
+  "homepage": "https://github.com/amratpal23-ship-it/Facefy-#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  }
+}
