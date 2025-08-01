@@ -13,6 +13,8 @@ const io = socketIo(server);
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html')); 
 });*/
+=======
+// HTML ਫਾਈਲ ਨੂੰ ਸਰਵ ਕਰਨ 
 
 // ਉਡੀਕ ਕਰ ਰਹੇ ਉਪਭੋਗਤਾਵਾਂ ਲਈ ਇੱਕ ਸਧਾਰਨ ਕਤਾਰ
 let waitingUsers = [];
