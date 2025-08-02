@@ -77,7 +77,6 @@ io.on('connection', (socket) => {
             socket.partner.emit('leave');
             socket.partner.partner = null; // ਸਾਥੀ ਦਾ ਲਿੰਕ ਤੋੜੋ
         }
-    };
     
     socket.on('leave', handleDisconnect);
     socket.on('disconnect', handleDisconnect);
@@ -86,6 +85,6 @@ io.on('connection', (socket) => {
 const PORT = 8080;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-
+});
 
 
