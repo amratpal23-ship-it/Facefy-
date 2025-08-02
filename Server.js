@@ -5,7 +5,12 @@ const socketIo = require('socket.io');
 const path = require('path');
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: "https://facefy.fun/", // <-- ਇੱਥੇ ਆਪਣੀ ਹੋਸਟਿੰਗਰ ਵੈੱਬਸਾਈਟ ਦਾ ਪੂਰਾ URL ਪਾਓ
+    methods: ["GET", "POST"]
+  }
+});
 
 // HTML ਫਾਈਲ ਨੂੰ ਸਰਵ ਕਰਨ ਲਈ
 /*app.use(express.static(path.join(__dirname)));
@@ -13,7 +18,6 @@ const io = socketIo(server);
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html')); 
 });*/
-=======
 // HTML ਫਾਈਲ ਨੂੰ ਸਰਵ ਕਰਨ 
 
 // ਉਡੀਕ ਕਰ ਰਹੇ ਉਪਭੋਗਤਾਵਾਂ ਲਈ ਇੱਕ ਸਧਾਰਨ ਕਤਾਰ
@@ -83,5 +87,4 @@ const PORT = 8080;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-git add package.json package-lock.json
 
