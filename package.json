@@ -1,24 +1,36 @@
 {
   "name": "facefy-app",
   "version": "1.0.0",
-  "description": "Files of Facefy backend",
-  "main": "Server.js",
+  "description": "Backend for Facefy video chat application",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/amratpal23-ship-it/Facefy-.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "webrtc",
+    "socket.io",
+    "video-chat"
+  ],
+  "author": "Amratpal",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/amratpal23-ship-it/Facefy-/issues"
   },
   "homepage": "https://github.com/amratpal23-ship-it/Facefy-#readme",
   "dependencies": {
-    "express": "^5.1.0",
-    "socket.io": "^4.8.1"
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
+
+
+
