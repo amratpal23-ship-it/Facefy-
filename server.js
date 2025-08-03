@@ -1,27 +1,21 @@
-// server.js - ਪੂਰਾ ਅਤੇ ਅੰਤਿਮ ਕੋਡ
-
+// server.js - Final Version
 console.log("Server.js file started running...");
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const crypto = require('crypto');
-const cors = require('cors'); // <-- 1. ਨਵਾਂ ਪੈਕੇਜ ਸ਼ਾਮਲ ਕੀਤਾ
+const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
-
-// 2. Express ਲਈ CORS ਨੂੰ ਸਮਰੱਥ ਕਰੋ (ਇਹੀ ਮੁੱਖ ਹੱਲ ਹੈ)
-app.use(cors()); 
+app.use(cors());
 
 const io = socketIo(server, {
-  cors: {
-    origin: "*", 
-    methods: ["GET", "POST"]
-  }
+  cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
 // ਯਕੀਨੀ ਬਣਾਓ ਕਿ ਤੁਸੀਂ ਇੱਥੇ ਆਪਣੀ ਉਹੀ ਪੁਰਾਣੀ ਗੁਪਤ ਕੁੰਜੀ ਪਾਈ ਹੈ
-const TURN_SECRET = "ਇੱਥੇ-ਆਪਣੀ-ਉਹੀ-ਪੁਰਾਣੀ-ਕੁੰਜੀ-ਰੱਖੋ";
+const TURN_SECRET = "ammyghuman123456-facefy";
 
 app.get('/api/get-turn-credentials', (req, res) => {
     const expiry = Math.floor(Date.now() / 1000) + 3600; 
@@ -30,60 +24,77 @@ app.get('/api/get-turn-credentials', (req, res) => {
     hmac.update(username);
     const credential = hmac.digest('base64');
     res.json({
-        urls: [
-            'turn:relay1.expressturn.com:3480',
-            'turn:relay1.expressturn.com:3480?transport=tcp'
-        ],
-        username: username,
-        credential: credential
+        urls: ['turn:relay1.expressturn.com:3480', 'turn:relay1.expressturn.com:3480?transport=tcp'],
+        username,
+        credential
     });
 });
 
-let waitingUsers = [];
+let waitingPool = {};
 
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
-    socket.on('join', (data) => {
-        socket.userData = data;
-        socket.partner = null;
-        const partner = waitingUsers.find(
-            user => user.id !== socket.id && user.userData.mode === socket.userData.mode
-        );
+
+    const findPartnerFor = (currentUser) => {
+        const mode = currentUser.userData.mode;
+        if (!waitingPool[mode]) {
+            waitingPool[mode] = [];
+        }
+
+        let partner = null;
+        const partnerIndex = waitingPool[mode].findIndex(user => user.id !== currentUser.id);
+
+        if (partnerIndex !== -1) {
+            partner = waitingPool[mode][partnerIndex];
+            waitingPool[mode].splice(partnerIndex, 1);
+        }
+
         if (partner) {
-            waitingUsers = waitingUsers.filter(user => user.id !== partner.id);
-            socket.partner = partner;
-            partner.partner = socket;
-            console.log(`Match found: ${socket.id} and ${partner.id}`);
+            currentUser.partnerId = partner.id;
+            partner.partnerId = currentUser.id;
+            console.log(`Match found: ${currentUser.id} and ${partner.id}`);
             partner.emit('match', { initiator: false });
-            socket.emit('match', { initiator: true });
+            currentUser.emit('match', { initiator: true });
         } else {
-            waitingUsers.push(socket);
-            console.log(`User ${socket.id} is waiting for a match.`);
-        }
-    });
-    socket.on('signal', (data) => {
-        if (socket.partner) {
-            socket.partner.emit('signal', data);
-        }
-    });
-    socket.on('chat', (message) => {
-        if (socket.partner) {
-            socket.partner.emit('chat', message);
-        }
-    });
-    const handleDisconnect = () => {
-        console.log(`User disconnected: ${socket.id}`);
-        waitingUsers = waitingUsers.filter(user => user.id !== socket.id);
-        if (socket.partner) {
-            socket.partner.emit('leave');
-            socket.partner.partner = null;
+            if (!waitingPool[mode].some(user => user.id === currentUser.id)) {
+                waitingPool[mode].push(currentUser);
+            }
+            console.log(`User ${currentUser.id} added to waiting pool for mode '${mode}'.`);
         }
     };
-    socket.on('leave', handleDisconnect);
-    socket.on('disconnect', handleDisconnect);
+
+    socket.on('join', (data) => {
+        socket.userData = data;
+        findPartnerFor(socket);
+    });
+
+    socket.on('signal', (data) => {
+        if (socket.partnerId) {
+            const partnerSocket = io.sockets.sockets.get(socket.partnerId);
+            if(partnerSocket) {
+                partnerSocket.emit('signal', data);
+            }
+        }
+    });
+
+    const cleanup = () => {
+        console.log(`Cleaning up for user: ${socket.id}`);
+        if (socket.partnerId) {
+            const partnerSocket = io.sockets.sockets.get(socket.partnerId);
+            if (partnerSocket) {
+                partnerSocket.emit('leave');
+                delete partnerSocket.partnerId;
+            }
+        }
+        for (const mode in waitingPool) {
+            waitingPool[mode] = waitingPool[mode].filter(user => user.id !== socket.id);
+        }
+    };
+    
+    socket.on('leave', cleanup);
+    socket.on('disconnect', cleanup);
 });
 
-// Render ਲਈ ਪੋਰਟ ਨੂੰ ਸਹੀ ਢੰਗ ਨਾਲ ਸੈੱਟ ਕਰੋ
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
