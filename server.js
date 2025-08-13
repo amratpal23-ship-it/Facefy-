@@ -1,9 +1,9 @@
-// server.js - Final Stable Version
+// server.js - Final Stable Version with 100x User Count
 console.log("Server.js file started running...");
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const crypto =require('crypto');
+const crypto = require('crypto');
 const cors = require('cors');
 
 const app = express();
@@ -14,12 +14,12 @@ const io = socketIo(server, {
   cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
-// ਯਕੀਨੀ ਬਣਾਓ ਕਿ ਤੁਸੀਂ ਇੱਥੇ ਆਪਣੀ ਉਹੀ ਪੁਰਾਣੀ ਗੁਪਤ ਕੁੰਜੀ ਪਾਈ ਹੈ
+//            
 const TURN_SECRET = "ammyghuman123456-facefy";
 
 app.get('/api/get-turn-credentials', (req, res) => {
     try {
-        const expiry = Math.floor(Date.now() / 1000) + 3600; // 1 ਘੰਟੇ ਲਈ ਵੈਧ
+        const expiry = Math.floor(Date.now() / 1000) + 3600; // 1   
         const username = `${expiry}:facefy_user`;
         const hmac = crypto.createHmac('sha1', TURN_SECRET);
         hmac.update(username);
@@ -41,8 +41,21 @@ let waitingUsers = {
     chat: []
 };
 
+// ---   :          ---
+function updateUserCount() {
+    const realCount = io.of("/").sockets.size; //    
+    
+    // ---   :    100    ---
+    const displayCount = realCount * 100; 
+    
+    console.log(`Real user count: ${realCount}, Broadcasting display count: ${displayCount}`);
+    io.emit('user-count-update', displayCount); //      
+}
+
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
+    
+    updateUserCount();
 
     socket.on('join', (data) => {
         if (!data || !data.mode || !['video', 'chat'].includes(data.mode)) {
@@ -52,26 +65,21 @@ io.on('connection', (socket) => {
 
         console.log(`User ${socket.id} wants to join ${data.mode}`);
         
-        // ਪਹਿਲਾਂ, ਯਕੀਨੀ ਬਣਾਓ ਕਿ ਯੂਜ਼ਰ ਪਹਿਲਾਂ ਤੋਂ ਕਿਸੇ ਹੋਰ ਲਿਸਟ ਵਿੱਚ ਨਹੀਂ ਹੈ
         waitingUsers.video = waitingUsers.video.filter(user => user.id !== socket.id);
         waitingUsers.chat = waitingUsers.chat.filter(user => user.id !== socket.id);
 
         socket.userData = data;
         
-        // ਇੱਕ ਸਾਥੀ ਲੱਭੋ
         const partner = waitingUsers[data.mode].pop();
 
         if (partner) {
-            // ਸਾਥੀ ਮਿਲ ਗਿਆ
             console.log(`Match found for ${data.mode}: ${socket.id} and ${partner.id}`);
             socket.partnerId = partner.id;
             partner.partnerId = socket.id;
 
-            // ਦੋਵਾਂ ਨੂੰ ਦੱਸੋ ਕਿ ਮੈਚ ਮਿਲ ਗਿਆ ਹੈ
             socket.emit('match', { initiator: true });
             partner.emit('match', { initiator: false });
         } else {
-            // ਕੋਈ ਸਾਥੀ ਨਹੀਂ, ਉਡੀਕ ਕਰੋ
             waitingUsers[data.mode].push(socket);
             console.log(`User ${socket.id} is now waiting in ${data.mode}. Pool size: ${waitingUsers[data.mode].length}`);
         }
@@ -81,7 +89,6 @@ io.on('connection', (socket) => {
         if (socket.partnerId) {
             const partnerSocket = io.sockets.sockets.get(socket.partnerId);
             if (partnerSocket) {
-                // ਸਿਗਨਲ ਨੂੰ ਸਿੱਧਾ ਦੂਜੇ ਯੂਜ਼ਰ ਨੂੰ ਭੇਜੋ
                 partnerSocket.emit('signal', data);
             }
         }
@@ -91,7 +98,6 @@ io.on('connection', (socket) => {
         if (socket.partnerId) {
             const partnerSocket = io.sockets.sockets.get(socket.partnerId);
             if (partnerSocket) {
-                // ਚੈਟ ਸੁਨੇਹੇ ਨੂੰ ਸਿੱਧਾ ਦੂਜੇ ਯੂਜ਼ਰ ਨੂੰ ਭੇਜੋ
                 partnerSocket.emit('chat', message);
             }
         }
@@ -100,19 +106,19 @@ io.on('connection', (socket) => {
     const cleanup = () => {
         console.log(`User disconnected: ${socket.id}. Cleaning up.`);
         
-        // ਯੂਜ਼ਰ ਨੂੰ ਉਡੀਕ ਸੂਚੀ ਵਿੱਚੋਂ ਹਟਾਓ
         waitingUsers.video = waitingUsers.video.filter(user => user.id !== socket.id);
         waitingUsers.chat = waitingUsers.chat.filter(user => user.id !== socket.id);
 
         if (socket.partnerId) {
             const partnerSocket = io.sockets.sockets.get(socket.partnerId);
             if (partnerSocket) {
-                // ਦੂਜੇ ਯੂਜ਼ਰ ਨੂੰ ਦੱਸੋ ਕਿ ਸਾਂਝੇਦਾਰੀ ਖਤਮ ਹੋ ਗਈ ਹੈ
                 partnerSocket.emit('leave');
-                delete partnerSocket.partnerId; // ਉਸਦੇ ਪਾਰਟਨਰ ਦੀ ID ਨੂੰ ਵੀ ਹਟਾਓ
+                delete partnerSocket.partnerId;
             }
         }
         delete socket.partnerId;
+        
+        setTimeout(updateUserCount, 500);
     };
 
     socket.on('leave', cleanup);
